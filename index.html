@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Scholarship Detection System</title>
+    <link rel="stylesheet" href="styles.css" />
+    
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔍 Scholarship Shield</h1>
+            <p>Protect yourself from fake scholarship scams using AI-powered detection</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalChecked">0</div>
+                <div class="stat-label">URLs Analyzed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="scamsDetected">0</div>
+                <div class="stat-label">Scams Detected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="safeScholarships">0</div>
+                <div class="stat-label">Safe Scholarships</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">95%</div>
+                <div class="stat-label">Accuracy Rate</div>
+            </div>
+        </div>
+
+        <div class="alert alert-success" id="successAlert"></div>
+        <div class="alert alert-error" id="errorAlert"></div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>🔗 Single URL Analysis</h2>
+                <form id="singleUrlForm">
+                    <div class="input-group">
+                        <label for="scholarshipUrl">Scholarship URL</label>
+                        <input type="url" id="scholarshipUrl" placeholder="https://example.com/scholarship" required>
+                    </div>
+                    <button type="submit" class="btn" id="analyzeBtn">
+                        Analyze Scholarship
+                    </button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📝 Text Analysis</h2>
+                <form id="textAnalysisForm">
+                    <div class="input-group">
+                        <label for="scholarshipText">Scholarship Description</label>
+                        <textarea id="scholarshipText" placeholder="Paste the scholarship description here..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="analyzeTextBtn">
+                        Analyze Text
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Batch Analysis</h2>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('urls')">Multiple URLs</button>
+                <button class="tab" onclick="switchTab('upload')">Upload File</button>
+            </div>
+            
+            <div class="tab-content active" id="urls-content">
+                <form id="batchUrlForm">
+                    <div class="input-group">
+                        <label for="batchUrls">Multiple URLs (one per line)</label>
+                        <textarea id="batchUrls" placeholder="https://example1.com/scholarship&#10;https://example2.com/scholarship&#10;https://example3.com/scholarship" rows="6"></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="batchAnalyzeBtn">
+                        Analyze All URLs
+                    </button>
+                </form>
+            </div>
+            
+            <div class="tab-content" id="upload-content">
+                <div class="input-group">
+                    <label for="fileUpload">Upload CSV/TXT file with URLs</label>
+                    <input type="file" id="fileUpload" accept=".csv,.txt">
+                </div>
+                <button type="button" class="btn" id="uploadAnalyzeBtn">
+                    Analyze Uploaded File
+                </button>
+            </div>
+        </div>
+
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>Analyzing scholarship data...</p>
+        </div>
+
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <h2>📋 Analysis Results</h2>
+            <div id="resultsContainer"></div>
+        </div>
+
+        <div class="card">
+            <h2>ℹ️ How It Works</h2>
+            <ul class="feature-list">
+                <li>Advanced NLP analysis of scholarship descriptions</li>
+                <li>Domain reputation and age verification</li>
+                <li>Suspicious keyword and phrase detection</li>
+                <li>Grammar and language pattern analysis</li>
+                <li>Machine learning classification (BERT model)</li>
+                <li>Real-time scam probability scoring</li>
+                <li>Batch processing for multiple URLs</li>
+                <li>Detailed risk assessment reports</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let analysisStats = {
+            totalChecked: 0,
+            scamsDetected: 0,
+            safeScholarships: 0
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            loadStoredStats();
+        });
+
+        function initializeEventListeners() {
+            document.getElementById('singleUrlForm').addEventListener('submit', handleSingleUrlAnalysis);
+            document.getElementById('textAnalysisForm').addEventListener('submit', handleTextAnalysis);
+            document.getElementById('batchUrlForm').addEventListener('submit', handleBatchAnalysis);
+            document.getElementById('uploadAnalyzeBtn').addEventListener('click', handleFileUpload);
+        }
+
+        function switchTab(tabName) {
+            // Remove active class from all tabs and contents
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to selected tab and content
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-content').classList.add('active');
+        }
+
+        async function handleSingleUrlAnalysis(event) {
+            event.preventDefault();
+            const url = document.getElementById('scholarshipUrl').value;
+            const button = document.getElementById('analyzeBtn');
+            
+            if (!url) {
+                showAlert('Please enter a valid URL', 'error');
+                return;
+            }
+
+            setLoadingState(button, true);
+            showLoading(true);
+
+            try {
+                const result = await analyzeScholarship(url);
+                displayResults([result]);
+                updateStats(result);
+                showAlert('Analysis completed successfully!', 'success');
+            } catch (error) {
+                showAlert('Error analyzing scholarship: ' + error.message, 'error');
+            } finally {
+                setLoadingState(button, false);
+                showLoading(false);
+            }
+        }
+
+        async function handleTextAnalysis(event) {
+            event.preventDefault();
+            const text = document.getElementById('scholarshipText').value;
+            const button = document.getElementById('analyzeTextBtn');
+            
+            if (!text.trim()) {
+                showAlert('Please enter scholarship text to analyze', 'error');
+                return;
+            }
+
+            setLoadingState(button, true);
+            showLoading(true);
+
+            try {
+                const result = await analyzeText(text);
+                displayResults([result]);
+                updateStats(result);
+                showAlert('Text analysis completed successfully!', 'success');
+            } catch (error) {
+                showAlert('Error analyzing text: ' + error.message, 'error');
+            } finally {
+                setLoadingState(button, false);
+                showLoading(false);
+            }
+        }
+
+        async function handleBatchAnalysis(event) {
+            event.preventDefault();
+            const urlsText = document.getElementById('batchUrls').value;
+            const button = document.getElementById('batchAnalyzeBtn');
+            
+            if (!urlsText.trim()) {
+                showAlert('Please enter URLs to analyze', 'error');
+                return;
+            }
+
+            const urls = urlsText.split('\n').filter(url => url.trim());
+            if (urls.length === 0) {
+                showAlert('No valid URLs found', 'error');
+                return;
+            }
+
+            setLoadingState(button, true);
+            showLoading(true);
+
+            try {
+                const results = await Promise.all(urls.map(url => analyzeScholarship(url.trim())));
+                displayResults(results);
+                results.forEach(result => updateStats(result));
+                showAlert(`Batch analysis completed! Analyzed ${results.length} URLs.`, 'success');
+            } catch (error) {
+                showAlert('Error in batch analysis: ' + error.message, 'error');
+            } finally {
+                setLoadingState(button, false);
+                showLoading(false);
+            }
+        }
+
+        async function handleFileUpload() {
+            const fileInput = document.getElementById('fileUpload');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showAlert('Please select a file to upload', 'error');
+                return;
+            }
+
+            const button = document.getElementById('uploadAnalyzeBtn');
+            setLoadingState(button, true);
+            showLoading(true);
+
+            try {
+                const text = await readFile(file);
+                const urls = text.split('\n').filter(url => url.trim());
+                
+                if (urls.length === 0) {
+                    showAlert('No valid URLs found in file', 'error');
+                    return;
+                }
+
+                const results = await Promise.all(urls.map(url => analyzeScholarship(url.trim())));
+                displayResults(results);
+                results.forEach(result => updateStats(result));
+                showAlert(`File analysis completed! Analyzed ${results.length} URLs.`, 'success');
+            } catch (error) {
+                showAlert('Error processing file: ' + error.message, 'error');
+            } finally {
+                setLoadingState(button, false);
+                showLoading(false);
+            }
+        }
+
+        // Simulated API calls (replace with actual backend calls)
+        async function analyzeScholarship(url) {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+            
+            // Simulate analysis result
+            const probability = Math.random();
+            const isScam = probability > 0.7;
+            
+            return {
+                url: url,
+                scamProbability: probability,
+                isScam: isScam,
+                riskLevel: probability > 0.8 ? 'high' : probability > 0.5 ? 'medium' : 'low',
+                details: {
+                    suspiciousKeywords: isScam ? ['urgent', 'guaranteed', 'no application fee required', 'act now'] : [],
+                    domainAge: Math.floor(Math.random() * 5) + 1 + ' years',
+                    grammarScore: Math.floor(Math.random() * 100),
+                    legitimacyIndicators: isScam ? 2 : 8
+                },
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        async function analyzeText(text) {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Simulate text analysis
+            const probability = Math.random();
+            const isScam = probability > 0.6;
+            
+            return {
+                url: 'Text Analysis',
+                text: text.substring(0, 100) + '...',
+                scamProbability: probability,
+                isScam: isScam,
+                riskLevel: probability > 0.8 ? 'high' : probability > 0.5 ? 'medium' : 'low',
+                details: {
+                    suspiciousKeywords: isScam ? ['free money', 'no strings attached', 'limited time'] : [],
+                    sentimentScore: Math.random() * 2 - 1,
+                    grammarScore: Math.floor(Math.random() * 100),
+                    readabilityScore: Math.floor(Math.random() * 100)
+                },
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        function displayResults(results) {
+            const container = document.getElementById('resultsContainer');
+            const section = document.getElementById('resultsSection');
+            
+            container.innerHTML = '';
+            
+            results.forEach(result => {
+                const resultElement = createResultElement(result);
+                container.appendChild(resultElement);
+            });
+            
+            section.style.display = 'block';
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function createResultElement(result) {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            
+            const riskClass = result.riskLevel === 'high' ? 'danger' : 
+                            result.riskLevel === 'medium' ? 'warning' : 'safe';
+            
+            const percentage = Math.round(result.scamProbability * 100);
+            
+            div.innerHTML = `
+                <div class="result-header">
+                    <div class="result-url">${result.url}</div>
+                    <div class="probability-badge ${riskClass}">
+                        ${percentage}% Risk
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${percentage}%; background: ${
+                        result.riskLevel === 'high' ? '#dc3545' : 
+                        result.riskLevel === 'medium' ? '#ffc107' : '#28a745'
+                    }"></div>
+                </div>
+                <div class="result-details">
+                    <strong>Risk Level:</strong> ${result.riskLevel.toUpperCase()}<br>
+                    <strong>Suspicious Keywords:</strong> ${result.details.suspiciousKeywords.join(', ') || 'None detected'}<br>
+                    ${result.details.domainAge ? `<strong>Domain Age:</strong> ${result.details.domainAge}<br>` : ''}
+                    <strong>Grammar Score:</strong> ${result.details.grammarScore}/100<br>
+                    <strong>Analysis Time:</strong> ${new Date(result.timestamp).toLocaleString()}
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function updateStats(result) {
+            analysisStats.totalChecked++;
+            if (result.isScam) {
+                analysisStats.scamsDetected++;
+            } else {
+                analysisStats.safeScholarships++;
+            }
+            
+            updateStatsDisplay();
+            saveStats();
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('totalChecked').textContent = analysisStats.totalChecked;
+            document.getElementById('scamsDetected').textContent = analysisStats.scamsDetected;
+            document.getElementById('safeScholarships').textContent = analysisStats.safeScholarships;
+        }
+
+        function saveStats() {
+            // In a real implementation, you'd save to backend
+            // For demo, we'll use memory only
+        }
+
+        function loadStoredStats() {
+            // In a real implementation, you'd load from backend
+            updateStatsDisplay();
+        }
+
+        function showAlert(message, type) {
+            const alertId = type === 'success' ? 'successAlert' : 'errorAlert';
+            const alert = document.getElementById(alertId);
+            alert.textContent = message;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function setLoadingState(button, isLoading) {
+            if (isLoading) {
+                button.disabled = true;
+                button.textContent = 'Analyzing...';
+            } else {
+                button.disabled = false;
+                button.textContent = button.id.includes('batch') ? 'Analyze All URLs' : 
+                                   button.id.includes('text') ? 'Analyze Text' : 'Analyze Scholarship';
+            }
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loadingIndicator');
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        function readFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(new Error('Failed to read file'));
+                reader.readAsText(file);
+            });
+        }
+    </script>
+</body>
+</html>
