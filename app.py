@@ -82,9 +82,7 @@ class Statistics(db.Model):
 def index():
     return render_template('index.html')
 
-@app.route('/index.html')
-def styles():
-    return render_template('index.html')
+
 
 @app.route('/api/analyze-url', methods=['POST'])
 def analyze_url():
