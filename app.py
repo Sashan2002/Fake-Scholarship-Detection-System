@@ -7,16 +7,16 @@ from werkzeug.utils import secure_filename
 import logging
 
 # Import our custom modules
-from nlp_analyzer import NLPAnalyzer
-from web_crawler import WebCrawler
-from ml_classifier import ScholarshipClassifier
-from domain_checker import DomainChecker
+# from nlp_analyzer import NLPAnalyzer
+# from web_crawler import WebCrawler
+# from ml_classifier import ScholarshipClassifier
+# from domain_checker import DomainChecker
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='template')
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///scholarship_detector.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -31,10 +31,10 @@ CORS(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize our custom components
-nlp_analyzer = NLPAnalyzer()
-web_crawler = WebCrawler()
-ml_classifier = ScholarshipClassifier()
-domain_checker = DomainChecker()
+# nlp_analyzer = NLPAnalyzer()
+# web_crawler = WebCrawler()
+# ml_classifier = ScholarshipClassifier()
+# domain_checker = DomainChecker()
 
 # Database Models
 class AnalysisResult(db.Model):
@@ -80,6 +80,10 @@ class Statistics(db.Model):
 # Routes
 @app.route('/')
 def index():
+    return render_template('index.html')
+
+@app.route('/index.html')
+def styles():
     return render_template('index.html')
 
 @app.route('/api/analyze-url', methods=['POST'])
@@ -387,9 +391,9 @@ def read_urls_from_file(filepath):
     return urls
 
 # Initialize database
-@app.before_first_request
-def create_tables():
-    db.create_all()
+# @app.before_first_request
+# def create_tables():
+#     db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
