@@ -7,9 +7,9 @@ from werkzeug.utils import secure_filename
 import logging
 
 # Import our custom modules
-# from nlp_analyzer import NLPAnalyzer
+from nlp_analyzer import NLPAnalyzer
 # from web_crawler import WebCrawler
-# from ml_classifier import ScholarshipClassifier
+from ml_classifier import ScholarshipClassifier
 # from domain_checker import DomainChecker
 
 # Configure logging
@@ -31,9 +31,9 @@ CORS(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize our custom components
-# nlp_analyzer = NLPAnalyzer()
+nlp_analyzer = NLPAnalyzer()
 # web_crawler = WebCrawler()
-# ml_classifier = ScholarshipClassifier()
+ml_classifier = ScholarshipClassifier()
 # domain_checker = DomainChecker()
 
 # Database Models
