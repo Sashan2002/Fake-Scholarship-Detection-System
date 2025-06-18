@@ -8,7 +8,7 @@ import logging
 
 # Import our custom modules
 from nlp_analyzer import NLPAnalyzer
-# from web_crawler import WebCrawler
+from web_crawler import WebCrawler
 from ml_classifier import ScholarshipClassifier
 # from domain_checker import DomainChecker
 
@@ -32,7 +32,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize our custom components
 nlp_analyzer = NLPAnalyzer()
-# web_crawler = WebCrawler()
+web_crawler = WebCrawler()
 ml_classifier = ScholarshipClassifier()
 # domain_checker = DomainChecker()
 
