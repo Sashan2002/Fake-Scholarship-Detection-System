@@ -10,7 +10,7 @@ import logging
 from nlp_analyzer import NLPAnalyzer
 from web_crawler import WebCrawler
 from ml_classifier import ScholarshipClassifier
-# from domain_checker import DomainChecker
+from domain_checker import DomainChecker
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +34,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 nlp_analyzer = NLPAnalyzer()
 web_crawler = WebCrawler()
 ml_classifier = ScholarshipClassifier()
-# domain_checker = DomainChecker()
+domain_checker = DomainChecker()
 
 # Database Models
 class AnalysisResult(db.Model):
