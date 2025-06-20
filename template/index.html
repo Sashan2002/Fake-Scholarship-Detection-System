@@ -269,52 +269,111 @@
         }
 
         // Simulated API calls (replace with actual backend calls)
+        // async function analyzeScholarship(url) {
+            
+        //     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+            
+            
+        //     const probability = Math.random();
+        //     const isScam = probability > 0.7;
+            
+        //     return {
+        //         url: url,
+        //         scamProbability: probability,
+        //         isScam: isScam,
+        //         riskLevel: probability > 0.8 ? 'high' : probability > 0.5 ? 'medium' : 'low',
+        //         details: {
+        //             suspiciousKeywords: isScam ? ['urgent', 'guaranteed', 'no application fee required', 'act now'] : [],
+        //             domainAge: Math.floor(Math.random() * 5) + 1 + ' years',
+        //             grammarScore: Math.floor(Math.random() * 100),
+        //             legitimacyIndicators: isScam ? 2 : 8
+        //         },
+        //         timestamp: new Date().toISOString()
+        //     };
+        // }
+
         async function analyzeScholarship(url) {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-            
-            // Simulate analysis result
-            const probability = Math.random();
-            const isScam = probability > 0.7;
-            
+            const response = await fetch('/api/analyze-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to analyze URL');
+            }
+
+            const data = await response.json();
             return {
-                url: url,
-                scamProbability: probability,
-                isScam: isScam,
-                riskLevel: probability > 0.8 ? 'high' : probability > 0.5 ? 'medium' : 'low',
+                url: data.url,
+                scamProbability: data.scam_probability,
+                isScam: data.is_scam,
+                riskLevel: data.risk_level,
                 details: {
-                    suspiciousKeywords: isScam ? ['urgent', 'guaranteed', 'no application fee required', 'act now'] : [],
-                    domainAge: Math.floor(Math.random() * 5) + 1 + ' years',
-                    grammarScore: Math.floor(Math.random() * 100),
-                    legitimacyIndicators: isScam ? 2 : 8
+                    suspiciousKeywords: data.details.suspicious_keywords,
+                    domainAge: data.details.domain_age,
+                    grammarScore: data.details.grammar_score,
+                    legitimacyIndicators: data.details.legitimacy_indicators
                 },
-                timestamp: new Date().toISOString()
+                timestamp: data.timestamp
             };
         }
 
+
+        // async function analyzeText(text) {
+           
+        //     await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            
+        //     const probability = Math.random();
+        //     const isScam = probability > 0.6;
+            
+        //     return {
+        //         url: 'Text Analysis',
+        //         text: text.substring(0, 100) + '...',
+        //         scamProbability: probability,
+        //         isScam: isScam,
+        //         riskLevel: probability > 0.8 ? 'high' : probability > 0.5 ? 'medium' : 'low',
+        //         details: {
+        //             suspiciousKeywords: isScam ? ['free money', 'no strings attached', 'limited time'] : [],
+        //             sentimentScore: Math.random() * 2 - 1,
+        //             grammarScore: Math.floor(Math.random() * 100),
+        //             readabilityScore: Math.floor(Math.random() * 100)
+        //         },
+        //         timestamp: new Date().toISOString()
+        //     };
+        // }
+
         async function analyzeText(text) {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // Simulate text analysis
-            const probability = Math.random();
-            const isScam = probability > 0.6;
-            
+            const response = await fetch('/api/analyze-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to analyze text');
+            }
+
+            const data = await response.json();
             return {
-                url: 'Text Analysis',
-                text: text.substring(0, 100) + '...',
-                scamProbability: probability,
-                isScam: isScam,
-                riskLevel: probability > 0.8 ? 'high' : probability > 0.5 ? 'medium' : 'low',
+                url: data.url,
+                text: data.text,
+                scamProbability: data.scam_probability,
+                isScam: data.is_scam,
+                riskLevel: data.risk_level,
                 details: {
-                    suspiciousKeywords: isScam ? ['free money', 'no strings attached', 'limited time'] : [],
-                    sentimentScore: Math.random() * 2 - 1,
-                    grammarScore: Math.floor(Math.random() * 100),
-                    readabilityScore: Math.floor(Math.random() * 100)
+                    suspiciousKeywords: data.details.suspicious_keywords,
+                    sentimentScore: data.details.sentiment_score,
+                    grammarScore: data.details.grammar_score,
+                    readabilityScore: data.details.readability_score
                 },
-                timestamp: new Date().toISOString()
+                timestamp: data.timestamp
             };
         }
+
 
         function displayResults(results) {
             const container = document.getElementById('resultsContainer');
