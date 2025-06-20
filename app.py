@@ -280,8 +280,20 @@ def analyze_content(url, content, metadata=None):
         # Domain Analysis (if URL provided)
         domain_features = {}
         if url != 'Text Analysis':
-            domain_features = domain_checker.check_domain(url)
-        
+            #domain_features = domain_checker.check_domain(url)
+            try:
+                domain_features = domain_checker.check_domain(url) or {}
+            except Exception as e:
+                logger.warning(f"Domain checker failed: {str(e)}")
+                domain_features = {}
+
+            # Set defaults for missing keys
+            domain_features.setdefault('domain_age', 'Unknown')
+            domain_features.setdefault('legitimacy_indicators', 0)
+            domain_features.setdefault('domain_age_days', 0)
+            domain_features.setdefault('security_score', 50)
+            domain_features.setdefault('domain_reputation', 50)
+            
         # Combine features for ML classification
         features = {**nlp_features, **domain_features}
         
