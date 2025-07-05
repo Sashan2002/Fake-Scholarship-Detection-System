@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+
+
 import os
 from werkzeug.utils import secure_filename
 import logging
@@ -22,6 +24,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///scholarship_detector.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+
 
 # Initialize extensions
 db = SQLAlchemy(app)
@@ -168,7 +172,8 @@ def analyze_batch():
                         'is_scam': False,
                         'risk_level': 'unknown',
                         'details': {},
-                        'timestamp': datetime.utcnow().isoformat()
+                        'timestamp': datetime.utcnow().isoformat() + 'Z'
+
                     }
                     results.append(error_result)
             except Exception as e:
@@ -316,7 +321,8 @@ def analyze_content(url, content, metadata=None):
                 'readability_score': nlp_features.get('readability_score', 0),
                 'legitimacy_indicators': domain_features.get('legitimacy_indicators', 0)
             },
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.utcnow().isoformat() + 'Z'
+
         }
         
     except Exception as e:

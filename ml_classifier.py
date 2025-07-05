@@ -19,13 +19,24 @@ class ScholarshipClassifier:
         self.model_path = model_path
         self.model = None
         self.scaler = None
+        # self.feature_names = [
+        #     'suspicious_keyword_count', 'sentiment_score', 'grammar_score',
+        #     'readability_score', 'legitimacy_score', 'urgency_score',
+        #     'word_count', 'sentence_count', 'avg_sentence_length',
+        #     'domain_age_days', 'ssl_certificate', 'domain_reputation',
+        #     'contact_info_present', 'social_media_links', 'privacy_policy_present'
+        # ]
         self.feature_names = [
-            'suspicious_keyword_count', 'sentiment_score', 'grammar_score',
-            'readability_score', 'legitimacy_score', 'urgency_score',
-            'word_count', 'sentence_count', 'avg_sentence_length',
-            'domain_age_days', 'ssl_certificate', 'domain_reputation',
-            'contact_info_present', 'social_media_links', 'privacy_policy_present'
+            'grammar_score', 'sentiment_score', 'readability_score', 'domain_age_days',
+            'days_until_expiration', 'ssl_certificate', 'ssl_valid', 'has_mx_records',
+            'has_spf_record', 'has_dkim_record', 'has_dmarc_record', 'domain_reputation',
+            'security_score', 'is_educational', 'is_government', 'is_known_legitimate',
+            'has_suspicious_pattern', 'has_phishing_keywords', 'has_suspicious_tld',
+            'has_trusted_tld', 'has_homograph', 'domain_complexity',
+            'legitimacy_indicators'
         ]
+
+    
         
         # Create models directory if it doesn't exist
         os.makedirs(self.model_path, exist_ok=True)
@@ -57,8 +68,8 @@ class ScholarshipClassifier:
         """Create and train a new model with synthetic data"""
         try:
             # Generate synthetic training data
-            training_data = self.generate_synthetic_data()
-            
+            #training_data = self.generate_synthetic_data()
+            training_data = pd.read_csv("scholarship_data_sample.csv")
             # Prepare features and labels
             X = training_data[self.feature_names]
             y = training_data['is_scam']
@@ -346,3 +357,7 @@ class FallbackClassifier:
             score += 0.15
         
         return min(score, 1.0)
+    
+    if __name__ == "__main__":
+        classifier = ScholarshipClassifier()
+        classifier.create_and_train_model()
