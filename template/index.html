@@ -398,7 +398,8 @@
                             result.riskLevel === 'medium' ? 'warning' : 'safe';
             
             const percentage = Math.round(result.scamProbability * 100);
-            
+            const localTime = new Date(result.timestamp).toLocaleString('en-LK', { timeZone: 'Asia/Colombo' });
+
             div.innerHTML = `
                 <div class="result-header">
                     <div class="result-url">${result.url}</div>
@@ -417,7 +418,8 @@
                     <strong>Suspicious Keywords:</strong> ${result.details.suspiciousKeywords.join(', ') || 'None detected'}<br>
                     ${result.details.domainAge ? `<strong>Domain Age:</strong> ${result.details.domainAge}<br>` : ''}
                     <strong>Grammar Score:</strong> ${result.details.grammarScore}/100<br>
-                    <strong>Analysis Time:</strong> ${new Date(result.timestamp).toLocaleString()}
+                    <strong>Analysis Time:</strong> ${localTime}
+
                 </div>
             `;
             
