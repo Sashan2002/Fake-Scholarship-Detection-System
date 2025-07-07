@@ -410,6 +410,48 @@ def read_urls_from_file(filepath):
 # @app.before_first_request
 # def create_tables():
 #     db.create_all()
+def create_tables():
+    with app.app_context():
+        db.create_all()
+
+@app.route('/api/statistics/extended', methods=['GET'])
+def get_extended_statistics():
+    try:
+        stats = Statistics.query.first()
+        if not stats:
+            stats = Statistics(total_checked=0, scams_detected=0, safe_scholarships=0)
+            db.session.add(stats)
+            db.session.commit()
+
+        # Get data for line chart (latest 10 results)
+        history = AnalysisResult.query.order_by(AnalysisResult.created_at.desc()).limit(10).all()
+        trend_data = [{
+            'timestamp': r.created_at.isoformat(),
+            'scam': r.is_scam
+        } for r in reversed(history)]
+
+        # For domain pie chart
+        all_results = AnalysisResult.query.all()
+        domain_count = {}
+        for r in all_results:
+            domain = r.url.split('/')[2] if r.url else 'Text'
+            domain_count[domain] = domain_count.get(domain, 0) + 1
+
+        return jsonify({
+            'total_checked': stats.total_checked,
+            'scams_detected': stats.scams_detected,
+            'safe_scholarships': stats.safe_scholarships,
+            'accuracy_rate': 95,
+            'trend_data': trend_data,
+            'domain_distribution': domain_count
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting statistics: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
 
 if __name__ == '__main__':
+    create_tables()
     app.run(debug=True, host='0.0.0.0', port=5000)

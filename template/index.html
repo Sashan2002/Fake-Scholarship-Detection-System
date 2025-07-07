@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fake Scholarship Detection System</title>
     <link rel="stylesheet" type="text/css" href="{{url_for('static',filename='styles.css')}}" />
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 <body>
     <div class="container">
@@ -105,6 +106,16 @@
         </div>
 
         <div class="card">
+            <h2>📊 Analytics Dashboard</h2>
+            <canvas id="scamChart">Scam Chart</canvas>
+            <br>
+            <canvas id="accuracyChart">Accuracy Chart</canvas>
+            <br>
+            <canvas id="domainChart"> Domain Chart</canvas>
+        </div>
+
+
+        <div class="card">
             <h2>ℹ️ How It Works</h2>
             <ul class="feature-list">
                 <li>Advanced NLP analysis of scholarship descriptions</li>
@@ -120,6 +131,9 @@
     </div>
 
     <script>
+        
+
+        
         // Global variables
         let analysisStats = {
             totalChecked: 0,
@@ -489,6 +503,68 @@
                 reader.readAsText(file);
             });
         }
+
+
+        async function loadAnalyticsCharts() {
+            const res = await fetch('/api/statistics/extended');
+            const data = await res.json();
+
+            // Scam vs Safe Chart
+            new Chart(document.getElementById('scamChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Scams Detected', 'Safe Scholarships'],
+                    datasets: [{
+                        label: 'Analysis Count',
+                        data: [data.scams_detected, data.safe_scholarships],
+                        backgroundColor: ['#dc3545', '#28a745']
+                    }]
+                }
+            });
+
+            // Accuracy trend (last 10)
+            const labels = data.trend_data.map(item => new Date(item.timestamp).toLocaleTimeString('en-LK', { timeZone: 'Asia/Colombo' }));
+            const points = data.trend_data.map(item => item.scam ? 1 : 0);
+
+            new Chart(document.getElementById('accuracyChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Scam (1) or Safe (0)',
+                        data: points,
+                        fill: false,
+                        borderColor: '#007bff',
+                        tension: 0.3
+                    }]
+                }
+            });
+
+            // Domain distribution pie chart
+            const domains = Object.keys(data.domain_distribution);
+            const domainCounts = Object.values(data.domain_distribution);
+
+            new Chart(document.getElementById('domainChart'), {
+                type: 'pie',
+                data: {
+                    labels: domains,
+                    datasets: [{
+                        data: domainCounts,
+                        backgroundColor: generateColors(domainCounts.length)
+                    }]
+                }
+            });
+        }
+
+        function generateColors(n) {
+            const colors = ['#007bff', '#dc3545', '#ffc107', '#28a745', '#6610f2', '#20c997'];
+            return Array.from({ length: n }, (_, i) => colors[i % colors.length]);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAnalyticsCharts();
+        });
+
     </script>
 </body>
 </html>
