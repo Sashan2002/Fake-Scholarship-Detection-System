@@ -217,6 +217,29 @@ canvas {
     margin: 0 auto 10px;
 }
 
+.feedback-buttons {
+    margin-top: 10px;
+}
+
+.feedback-buttons button {
+    margin-right: 10px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.feedback-buttons button:first-child {
+    background-color: #28a745;
+    color: white;
+}
+
+.feedback-buttons button:last-child {
+    background-color: #dc3545;
+    color: white;
+}
+
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

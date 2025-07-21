@@ -73,6 +73,12 @@ class AnalysisResult(db.Model):
             },
             'timestamp': self.created_at.isoformat()
         }
+class Feedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(500), nullable=True)
+    is_scam_prediction = db.Column(db.Boolean, nullable=False)
+    user_feedback = db.Column(db.Boolean, nullable=False)  # True = Correct, False = Wrong
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Statistics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -80,6 +86,8 @@ class Statistics(db.Model):
     scams_detected = db.Column(db.Integer, default=0)
     safe_scholarships = db.Column(db.Integer, default=0)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 
 # Routes
 @app.route('/')
@@ -245,7 +253,7 @@ def get_statistics():
             'total_checked': stats.total_checked,
             'scams_detected': stats.scams_detected,
             'safe_scholarships': stats.safe_scholarships,
-            'accuracy_rate': 95  # Static for now, could be calculated
+            'accuracy_rate': accuracy 
         })
         
     except Exception as e:
@@ -437,11 +445,22 @@ def get_extended_statistics():
             domain = r.url.split('/')[2] if r.url else 'Text'
             domain_count[domain] = domain_count.get(domain, 0) + 1
 
+        # Real accuracy
+        correct = 0
+        total = 0
+        for r in all_results:
+            predicted = r.scam_probability > 0.5
+            if predicted == r.is_scam:
+                correct += 1
+            total += 1
+        accuracy = round((correct / total) * 100) if total > 0 else 0
+
+        
         return jsonify({
             'total_checked': stats.total_checked,
             'scams_detected': stats.scams_detected,
             'safe_scholarships': stats.safe_scholarships,
-            'accuracy_rate': 95,
+            'accuracy_rate': accuracy,
             'trend_data': trend_data,
             'domain_distribution': domain_count
         })
@@ -450,6 +469,22 @@ def get_extended_statistics():
         logger.error(f"Error getting statistics: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/api/feedback', methods=['POST'])
+def submit_feedback():
+    try:
+        data = request.get_json()
+        feedback = Feedback(
+            url=data.get('url'),
+            is_scam_prediction=data.get('is_scam'),
+            user_feedback=data.get('user_feedback')
+        )
+        db.session.add(feedback)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Feedback recorded'})
+    except Exception as e:
+        logger.error(f"Error saving feedback: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to save feedback'}), 500
 
 
 if __name__ == '__main__':
