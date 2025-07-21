@@ -12,6 +12,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class ScholarshipClassifier:
     def __init__(self, model_path='models/'):
@@ -26,16 +27,22 @@ class ScholarshipClassifier:
         #     'domain_age_days', 'ssl_certificate', 'domain_reputation',
         #     'contact_info_present', 'social_media_links', 'privacy_policy_present'
         # ]
+        # self.feature_names = [
+        #     'grammar_score', 'sentiment_score', 'readability_score', 'domain_age_days',
+        #     'days_until_expiration', 'ssl_certificate', 'ssl_valid', 'has_mx_records',
+        #     'has_spf_record', 'has_dkim_record', 'has_dmarc_record', 'domain_reputation',
+        #     'security_score', 'is_educational', 'is_government', 'is_known_legitimate',
+        #     'has_suspicious_pattern', 'has_phishing_keywords', 'has_suspicious_tld',
+        #     'has_trusted_tld', 'has_homograph', 'domain_complexity',
+        #     'legitimacy_indicators'
+        # ]
         self.feature_names = [
-            'grammar_score', 'sentiment_score', 'readability_score', 'domain_age_days',
-            'days_until_expiration', 'ssl_certificate', 'ssl_valid', 'has_mx_records',
-            'has_spf_record', 'has_dkim_record', 'has_dmarc_record', 'domain_reputation',
-            'security_score', 'is_educational', 'is_government', 'is_known_legitimate',
-            'has_suspicious_pattern', 'has_phishing_keywords', 'has_suspicious_tld',
-            'has_trusted_tld', 'has_homograph', 'domain_complexity',
-            'legitimacy_indicators'
+            'suspicious_keyword_count', 'sentiment_score', 'grammar_score',
+            'readability_score', 'legitimacy_score', 'urgency_score',
+            'word_count', 'sentence_count', 'avg_sentence_length',
+            'domain_age_days', 'ssl_certificate', 'domain_reputation',
+            'contact_info_present', 'social_media_links', 'privacy_policy_present'
         ]
-
     
         
         # Create models directory if it doesn't exist
@@ -69,7 +76,7 @@ class ScholarshipClassifier:
         try:
             # Generate synthetic training data
             #training_data = self.generate_synthetic_data()
-            training_data = pd.read_csv("scholarship_data_sample.csv")
+            training_data = pd.read_csv("real_dataset.csv")
             # Prepare features and labels
             X = training_data[self.feature_names]
             y = training_data['is_scam']
