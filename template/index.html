@@ -86,10 +86,10 @@
             
             <div class="tab-content" id="upload-content">
                 <div class="input-group">
-                    <label for="fileUpload">Upload CSV/TXT file with URLs</label>
-                    <input type="file" id="fileUpload" accept=".csv,.txt">
+                    <label for="fileUpload">Upload CSV/TXT/PDF/DOCS file with URLs</label>
+                    <input type="file" id="fileUpload" accept=".csv,.txt,.pdf,.docx">
                 </div>
-                <button type="button" class="btn" id="uploadAnalyzeBtn">
+                <button type="button" class="btn" id="uploadAnalyzeBtn" onclick="handleFileUpload()">
                     Analyze Uploaded File
                 </button>
             </div>
@@ -254,12 +254,99 @@
             }
         }
 
+        // async function handleFileUpload() {
+        //     const fileInput = document.getElementById('fileUpload');
+        //     const file = fileInput.files[0];
+            
+        //     if (!file) {
+        //         showAlert('Please select a file to upload', 'error');
+        //         return;
+        //     }
+
+        //     const button = document.getElementById('uploadAnalyzeBtn');
+        //     setLoadingState(button, true);
+        //     showLoading(true);
+
+        //     const formData = new FormData();
+        //     formData.append('file', file);
+
+        //     try {
+        //         const text = await readFile(file);
+        //         const urls = text.split('\n').filter(url => url.trim());
+                
+        //         if (urls.length === 0) {
+        //             showAlert('No valid URLs found in file', 'error');
+        //             return;
+        //         }
+
+        //         const results = await Promise.all(urls.map(url => analyzeScholarship(url.trim())));
+        //         displayResults(results);
+        //         results.forEach(result => updateStats(result));
+        //         showAlert(`File analysis completed! Analyzed ${results.length} URLs.`, 'success');
+        //     } catch (error) {
+        //         showAlert('Error processing file: ' + error.message, 'error');
+        //     } finally {
+        //         setLoadingState(button, false);
+        //         showLoading(false);
+        //     }
+        // }
+
+        // async function handleFileUpload() {
+        //     const fileInput = document.getElementById('fileUpload');
+        //     const file = fileInput.files[0];
+
+        //     if (!file) {
+        //         showAlert('Please select a file to upload', 'error');
+        //         return;
+        //     }
+
+        //     const button = document.getElementById('uploadAnalyzeBtn');
+        //     setLoadingState(button, true);
+        //     showLoading(true);
+
+        //     const formData = new FormData();
+        //     formData.append('file', file);
+
+        //     try {
+        //         const response = await fetch('/api/upload-file', {
+        //             method: 'POST',
+        //             body: formData
+        //         });
+
+        //         const data = await response.json();
+        //         if (data.results) {
+        //             displayResults(data.results);
+        //             data.results.forEach(updateStats);
+        //             showAlert(`File analysis completed! Analyzed ${data.results.length} URLs.`, 'success');
+        //         } else {
+        //             showAlert(data.error || 'Unexpected error', 'error');
+        //         }
+        //     } catch (error) {
+        //         showAlert('Upload failed: ' + error.message, 'error');
+        //     } finally {
+        //         setLoadingState(button, false);
+        //         showLoading(false);
+        //     }
+        // }
+
         async function handleFileUpload() {
             const fileInput = document.getElementById('fileUpload');
             const file = fileInput.files[0];
-            
+
             if (!file) {
                 showAlert('Please select a file to upload', 'error');
+                return;
+            }
+
+            // ✅ Add this file type check here
+            const allowedTypes = [
+                'text/plain',
+                'text/csv',
+                'application/pdf',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ];
+            if (!allowedTypes.includes(file.type)) {
+                showAlert('Only TXT, CSV, PDF, or DOCX files are supported.', 'error');
                 return;
             }
 
@@ -268,9 +355,9 @@
             showLoading(true);
 
             try {
-                const text = await readFile(file);
+                const text = await readFile(file);  // This works for TXT/CSV; PDF/DOCX should be handled server-side.
                 const urls = text.split('\n').filter(url => url.trim());
-                
+
                 if (urls.length === 0) {
                     showAlert('No valid URLs found in file', 'error');
                     return;
@@ -287,6 +374,61 @@
                 showLoading(false);
             }
         }
+
+        // async function handleFileUpload() {
+        //     const fileInput = document.getElementById('fileUpload');
+        //     const file = fileInput.files[0];
+
+        //     if (!file) {
+        //         showAlert('Please select a file to upload', 'error');
+        //         return;
+        //     }
+
+        //     // Allowed types check (optional client-side)
+        //     const allowedTypes = [
+        //         'text/plain',
+        //         'text/csv',
+        //         'application/pdf',
+        //         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        //     ];
+
+        //     if (!allowedTypes.includes(file.type)) {
+        //         showAlert('Only TXT, CSV, PDF, or DOCX files are supported.', 'error');
+        //         return;
+        //     }
+
+        //     const button = document.getElementById('uploadAnalyzeBtn');
+        //     setLoadingState(button, true);
+        //     showLoading(true);
+
+        //     try {
+        //         const formData = new FormData();
+        //         formData.append('file', file);
+
+        //         const response = await fetch('/api/upload-file', {
+        //             method: 'POST',
+        //             body: formData
+        //         });
+
+        //         const data = await response.json();
+
+        //         if (response.ok && data.results) {
+        //             displayResults(data.results);
+        //             data.results.forEach(result => updateStats(result));
+        //             showAlert(`File analysis completed! Analyzed ${data.results.length} URLs.`, 'success');
+        //         } else {
+        //             showAlert('Upload failed: ' + (data.error || 'Unknown error'), 'error');
+        //         }
+        //     } catch (error) {
+        //         showAlert('Upload failed: ' + error.message, 'error');
+        //     } finally {
+        //         setLoadingState(button, false);
+        //         showLoading(false);
+        //     }
+        // }
+
+
+
 
         // Simulated API calls (replace with actual backend calls)
         // async function analyzeScholarship(url) {
