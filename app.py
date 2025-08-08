@@ -10,6 +10,7 @@ import logging
 import csv
 import pdfplumber
 from docx import Document
+import validators
 # Import our custom modules
 from nlp_analyzer import NLPAnalyzer
 from web_crawler import WebCrawler
@@ -395,34 +396,7 @@ def allowed_file(filename):
     allowed_extensions = {'txt', 'csv', 'pdf', 'docx'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
-# def read_urls_from_file(filepath):
-#     """Read URLs from uploaded file"""
-#     urls = []
-#     try:
-#         with open(filepath, 'r', encoding='utf-8') as file:
-#             if filepath.endswith('.csv'):
-#                 import csv
-#                 reader = csv.reader(file)
-#                 for row in reader:
-#                     if row and row[0].startswith('http'):
-#                         urls.append(row[0])
-#             else:
-#                 for line in file:
-#                     line = line.strip()
-#                     if line.startswith('http'):
-#                         urls.append(line)
-#     except Exception as e:
-#         logger.error(f"Error reading file {filepath}: {str(e)}")
-    
-#     return urls
 
-
-
-# def extract_urls_from_text(text):
-#     url_pattern = r'(https?://[^\s]+)'
-#     urls = re.findall(url_pattern, text)
-#     cleaned_urls = [url.rstrip(').,;\'"') for url in urls]
-#     return cleaned_urls
 def extract_urls_from_text(text):
     """Extracts all valid URLs from a block of text using regex"""
     url_pattern = r'(https?://[^\s\)\]\}\>\'\"“”‘’]+)'
@@ -430,6 +404,101 @@ def extract_urls_from_text(text):
     # Clean trailing punctuation
     cleaned_urls = [url.strip('.,);"\'>') for url in urls]
     return cleaned_urls
+
+def clean_and_validate(url):
+    """Strip and validate URLs"""
+    url = url.strip()
+    if validators.url(url):
+        return url
+    return None
+
+# def read_urls_from_file(filepath):
+#     """Read and extract URLs from TXT, CSV, PDF, or DOCX files"""
+#     urls = []
+
+#     try:
+#         # Read CSV
+#         if filepath.endswith('.csv'):
+#             with open(filepath, 'r', encoding='utf-8') as file:
+#                 reader = csv.reader(file)
+#                 for row in reader:
+#                     line = ' '.join(row)  # Flatten row
+#                     urls += extract_urls_from_text(line)
+
+#         # Read TXT
+#         elif filepath.endswith('.txt'):
+#             with open(filepath, 'r', encoding='utf-8') as file:
+#                 text = file.read()
+#                 urls += extract_urls_from_text(text)
+
+#         # Read PDF
+#         elif filepath.endswith('.pdf'):
+#             with pdfplumber.open(filepath) as pdf:
+#                 for page in pdf.pages:
+#                     text = page.extract_text()
+#                     if text:
+#                         urls += extract_urls_from_text(text)
+
+#         # Read DOCX
+#         elif filepath.endswith('.docx'):
+#             doc = Document(filepath)
+#             full_text = '\n'.join([para.text for para in doc.paragraphs])
+#             urls += extract_urls_from_text(full_text)
+
+#         # Remove duplicates
+#         urls = list(set(urls))
+
+#     except Exception as e:
+#         logger.error(f"Error reading file {filepath}: {str(e)}")
+
+#     return urls
+
+# def read_urls_from_file(filepath):
+#     """Read URLs from TXT, CSV, PDF, or DOCX files"""
+#     urls = []
+#     try:
+#         ext = filepath.lower()
+
+#         # CSV
+#         if ext.endswith('.csv'):
+#             with open(filepath, 'r', encoding='utf-8') as file:
+#                 reader = csv.reader(file)
+#                 for row in reader:
+#                     for item in row:
+#                         item = item.strip()
+#                         if item.startswith('http'):
+#                             urls.append(item)
+
+#         # TXT
+#         elif ext.endswith('.txt'):
+#             with open(filepath, 'r', encoding='utf-8') as file:
+#                 for line in file:
+#                     line = line.strip()
+#                     if line.startswith('http'):
+#                         urls.append(line)
+
+#         # PDF
+#         elif ext.endswith('.pdf'):
+#             with pdfplumber.open(filepath) as pdf:
+#                 for page in pdf.pages:
+#                     text = page.extract_text()
+#                     if text:
+#                         for word in text.split():
+#                             if word.startswith('http'):
+#                                 urls.append(word.strip())
+
+#         # DOCX
+#         elif ext.endswith('.docx'):
+#             doc = Document(filepath)
+#             for para in doc.paragraphs:
+#                 for word in para.text.split():
+#                     if word.startswith('http'):
+#                         urls.append(word.strip())
+
+#     except Exception as e:
+#         logger.error(f"Error reading file {filepath}: {str(e)}")
+
+#     return urls
 
 # def read_urls_from_file(filepath):
 #     """Read URLs from TXT, CSV, PDF, or DOCX files"""
@@ -440,33 +509,34 @@ def extract_urls_from_text(text):
 #                 reader = csv.reader(file)
 #                 for row in reader:
 #                     for item in row:
-#                         item = item.strip()
-#                         if item.startswith('http'):
-#                             urls.append(item)
+#                         url = clean_and_validate(item)
+#                         if url:
+#                             urls.append(url)
 
 #         elif filepath.endswith('.txt'):
 #             with open(filepath, 'r', encoding='utf-8') as file:
 #                 for line in file:
-#                     line = line.strip()
-#                     if line.startswith('http'):
-#                         urls.append(line)
+#                     url = clean_and_validate(line)
+#                     if url:
+#                         urls.append(url)
 
 #         elif filepath.endswith('.pdf'):
 #             with pdfplumber.open(filepath) as pdf:
 #                 for page in pdf.pages:
 #                     text = page.extract_text()
 #                     if text:
-#                         for line in text.splitlines():
-#                             line = line.strip()
-#                             if line.startswith('http'):
-#                                 urls.append(line)
+#                         for match in re.findall(r'(https?://[^\s]+)', text):
+#                             url = clean_and_validate(match)
+#                             if url:
+#                                 urls.append(url)
 
 #         elif filepath.endswith('.docx'):
 #             doc = Document(filepath)
 #             for para in doc.paragraphs:
-#                 text = para.text.strip()
-#                 if text.startswith('http'):
-#                     urls.append(text)
+#                 for match in re.findall(r'(https?://[^\s]+)', para.text):
+#                     url = clean_and_validate(match)
+#                     if url:
+#                         urls.append(url)
 
 #     except Exception as e:
 #         logger.error(f"Error reading file {filepath}: {str(e)}")
@@ -474,96 +544,60 @@ def extract_urls_from_text(text):
 #     return urls
 
 def read_urls_from_file(filepath):
-    """Read and extract URLs from TXT, CSV, PDF, or DOCX files"""
+    """Read URLs from TXT, CSV, PDF, or DOCX files and validate them."""
     urls = []
+    url_pattern = r'(https?://[^\s\)\]\}\>\'\"“”‘’,]+)'  # Handles punctuation
 
     try:
-        # Read CSV
         if filepath.endswith('.csv'):
             with open(filepath, 'r', encoding='utf-8') as file:
                 reader = csv.reader(file)
                 for row in reader:
-                    line = ' '.join(row)  # Flatten row
-                    urls += extract_urls_from_text(line)
+                    for item in row:
+                        for match in re.findall(url_pattern, item):
+                            url = clean_and_validate(match)
+                            if url:
+                                urls.append(url)
 
-        # Read TXT
         elif filepath.endswith('.txt'):
             with open(filepath, 'r', encoding='utf-8') as file:
                 text = file.read()
-                urls += extract_urls_from_text(text)
+                for match in re.findall(url_pattern, text):
+                    url = clean_and_validate(match)
+                    if url:
+                        urls.append(url)
 
-        # Read PDF
         elif filepath.endswith('.pdf'):
             with pdfplumber.open(filepath) as pdf:
                 for page in pdf.pages:
                     text = page.extract_text()
                     if text:
-                        urls += extract_urls_from_text(text)
+                        for match in re.findall(url_pattern, text):
+                            url = clean_and_validate(match)
+                            if url:
+                                urls.append(url)
 
-        # Read DOCX
         elif filepath.endswith('.docx'):
             doc = Document(filepath)
-            full_text = '\n'.join([para.text for para in doc.paragraphs])
-            urls += extract_urls_from_text(full_text)
-
-        # Remove duplicates
-        urls = list(set(urls))
+            for para in doc.paragraphs:
+                for match in re.findall(url_pattern, para.text):
+                    url = clean_and_validate(match)
+                    if url:
+                        urls.append(url)
 
     except Exception as e:
         logger.error(f"Error reading file {filepath}: {str(e)}")
 
-    return urls
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_urls = []
+    for url in urls:
+        if url not in seen:
+            seen.add(url)
+            unique_urls.append(url)
 
-# def read_urls_from_file(filepath):
-#     """Read URLs from uploaded TXT, CSV, PDF, or DOCX file"""
-#     urls = []
-#     try:
-#         ext = filepath.lower().split('.')[-1]
+    return unique_urls
 
-#         if ext == 'csv':
-#             import csv
-#             with open(filepath, 'r', encoding='utf-8') as file:
-#                 reader = csv.reader(file)
-#                 for row in reader:
-#                     for cell in row:
-#                         if cell.strip().startswith("http"):
-#                             urls.append(cell.strip())
-
-#         elif ext == 'txt':
-#             with open(filepath, 'r', encoding='utf-8') as file:
-#                 for line in file:
-#                     line = line.strip()
-#                     if line.startswith("http"):
-#                         urls.append(line)
-
-#         elif ext == 'pdf':
-#             from PyPDF2 import PdfReader
-#             reader = PdfReader(filepath)
-#             for page in reader.pages:
-#                 text = page.extract_text()
-#                 if text:
-#                     for line in text.split('\n'):
-#                         if line.strip().startswith("http"):
-#                             urls.append(line.strip())
-
-#         elif ext == 'docx':
-#             from docx import Document
-#             doc = Document(filepath)
-#             for para in doc.paragraphs:
-#                 line = para.text.strip()
-#                 if line.startswith("http"):
-#                     urls.append(line)
-
-#     except Exception as e:
-#         logger.error(f"Error reading file {filepath}: {str(e)}")
-
-#     return urls
-
-
-# Initialize database
-# @app.before_first_request
-# def create_tables():
-#     db.create_all()
 def create_tables():
     with app.app_context():
         db.create_all()
