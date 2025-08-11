@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
+from features import extract_features_from_text
 
 import os
 from werkzeug.utils import secure_filename
@@ -128,30 +128,50 @@ def analyze_url():
         logger.error(f"Error analyzing URL: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
+# @app.route('/api/analyze-text', methods=['POST'])
+# def analyze_text():
+#     try:
+#         data = request.get_json()
+#         text = data.get('text')
+        
+#         if not text:
+#             return jsonify({'error': 'Text is required'}), 400
+        
+#         logger.info("Analyzing text content")
+        
+#         # Analyze the text content
+#         result = analyze_content('Text Analysis', text)
+#         result['text'] = text[:200] + '...' if len(text) > 200 else text
+        
+#         # Save to database
+#         save_analysis_result(result)
+#         update_statistics(result['is_scam'])
+        
+#         return jsonify(result)
+        
+#     except Exception as e:
+#         logger.error(f"Error analyzing text: {str(e)}")
+#         return jsonify({'error': 'Internal server error'}), 500
+
 @app.route('/api/analyze-text', methods=['POST'])
 def analyze_text():
-    try:
-        data = request.get_json()
-        text = data.get('text')
-        
-        if not text:
-            return jsonify({'error': 'Text is required'}), 400
-        
-        logger.info("Analyzing text content")
-        
-        # Analyze the text content
-        result = analyze_content('Text Analysis', text)
-        result['text'] = text[:200] + '...' if len(text) > 200 else text
-        
-        # Save to database
-        save_analysis_result(result)
-        update_statistics(result['is_scam'])
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        logger.error(f"Error analyzing text: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+    data = request.get_json()
+    text = data.get('text', '')
+
+    if not text.strip():
+        return jsonify({'error': 'No text provided'}), 400
+
+    # Extract real features
+    features = extract_features_from_text(text)
+
+    # Classify using ML
+    result = ml_classifier.classify(features)
+
+    return jsonify({
+        'is_scam': result['is_scam'],
+        'scam_probability': round(result['scam_probability'] * 100, 2),
+        'confidence': round(result['confidence'] * 100, 2)
+    })
 
 @app.route('/api/analyze-batch', methods=['POST'])
 def analyze_batch():
