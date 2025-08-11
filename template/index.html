@@ -86,8 +86,8 @@
             
             <div class="tab-content" id="upload-content">
                 <div class="input-group">
-                    <label for="fileUpload">Upload CSV/TXT/PDF/DOCX file with URLs</label>
-                    <input type="file" id="fileUpload" accept=".csv,.txt,.pdf,.docx">
+                    <label for="fileUpload">Upload CSV/TXT file with URLs</label>
+                    <input type="file" id="fileUpload" accept=".csv,.txt">
                 </div>
                 <button type="button" class="btn" id="uploadAnalyzeBtn" onclick="handleFileUpload()">
                     Analyze Uploaded File
@@ -268,11 +268,11 @@
             const allowedTypes = [
                 'text/plain',
                 'text/csv',
-                'application/pdf',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                // 'application/pdf',
+                // 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             ];
             if (!allowedTypes.includes(file.type)) {
-                showAlert('Only TXT, CSV, PDF, or DOCX files are supported.', 'error');
+                showAlert('Only TXT, CSV files are supported.', 'error');
                 return;
             }
 
