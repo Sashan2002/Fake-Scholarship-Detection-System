@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from features import extract_features_from_text
+#from features import extract_features_from_text
 
 import os
 from werkzeug.utils import secure_filename
@@ -128,50 +128,50 @@ def analyze_url():
         logger.error(f"Error analyzing URL: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-# @app.route('/api/analyze-text', methods=['POST'])
-# def analyze_text():
-#     try:
-#         data = request.get_json()
-#         text = data.get('text')
-        
-#         if not text:
-#             return jsonify({'error': 'Text is required'}), 400
-        
-#         logger.info("Analyzing text content")
-        
-#         # Analyze the text content
-#         result = analyze_content('Text Analysis', text)
-#         result['text'] = text[:200] + '...' if len(text) > 200 else text
-        
-#         # Save to database
-#         save_analysis_result(result)
-#         update_statistics(result['is_scam'])
-        
-#         return jsonify(result)
-        
-#     except Exception as e:
-#         logger.error(f"Error analyzing text: {str(e)}")
-#         return jsonify({'error': 'Internal server error'}), 500
-
 @app.route('/api/analyze-text', methods=['POST'])
 def analyze_text():
-    data = request.get_json()
-    text = data.get('text', '')
+    try:
+        data = request.get_json()
+        text = data.get('text')
+        
+        if not text:
+            return jsonify({'error': 'Text is required'}), 400
+        
+        logger.info("Analyzing text content")
+        
+        # Analyze the text content
+        result = analyze_content('Text Analysis', text)
+        result['text'] = text[:200] + '...' if len(text) > 200 else text
+        
+        # Save to database
+        save_analysis_result(result)
+        update_statistics(result['is_scam'])
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error analyzing text: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
-    if not text.strip():
-        return jsonify({'error': 'No text provided'}), 400
+# @app.route('/api/analyze-text', methods=['POST'])
+# def analyze_text():
+#     data = request.get_json()
+#     text = data.get('text', '')
 
-    # Extract real features
-    features = extract_features_from_text(text)
+#     if not text.strip():
+#         return jsonify({'error': 'No text provided'}), 400
 
-    # Classify using ML
-    result = ml_classifier.classify(features)
+#     # Extract real features
+#     features = extract_features_from_text(text)
 
-    return jsonify({
-        'is_scam': result['is_scam'],
-        'scam_probability': round(result['scam_probability'] * 100, 2),
-        'confidence': round(result['confidence'] * 100, 2)
-    })
+#     # Classify using ML
+#     result = ml_classifier.classify(features)
+
+#     return jsonify({
+#         'is_scam': result['is_scam'],
+#         'scam_probability': round(result['scam_probability'] * 100, 2),
+#         'confidence': round(result['confidence'] * 100, 2)
+#     })
 
 @app.route('/api/analyze-batch', methods=['POST'])
 def analyze_batch():
@@ -432,136 +432,6 @@ def clean_and_validate(url):
         return url
     return None
 
-# def read_urls_from_file(filepath):
-#     """Read and extract URLs from TXT, CSV, PDF, or DOCX files"""
-#     urls = []
-
-#     try:
-#         # Read CSV
-#         if filepath.endswith('.csv'):
-#             with open(filepath, 'r', encoding='utf-8') as file:
-#                 reader = csv.reader(file)
-#                 for row in reader:
-#                     line = ' '.join(row)  # Flatten row
-#                     urls += extract_urls_from_text(line)
-
-#         # Read TXT
-#         elif filepath.endswith('.txt'):
-#             with open(filepath, 'r', encoding='utf-8') as file:
-#                 text = file.read()
-#                 urls += extract_urls_from_text(text)
-
-#         # Read PDF
-#         elif filepath.endswith('.pdf'):
-#             with pdfplumber.open(filepath) as pdf:
-#                 for page in pdf.pages:
-#                     text = page.extract_text()
-#                     if text:
-#                         urls += extract_urls_from_text(text)
-
-#         # Read DOCX
-#         elif filepath.endswith('.docx'):
-#             doc = Document(filepath)
-#             full_text = '\n'.join([para.text for para in doc.paragraphs])
-#             urls += extract_urls_from_text(full_text)
-
-#         # Remove duplicates
-#         urls = list(set(urls))
-
-#     except Exception as e:
-#         logger.error(f"Error reading file {filepath}: {str(e)}")
-
-#     return urls
-
-# def read_urls_from_file(filepath):
-#     """Read URLs from TXT, CSV, PDF, or DOCX files"""
-#     urls = []
-#     try:
-#         ext = filepath.lower()
-
-#         # CSV
-#         if ext.endswith('.csv'):
-#             with open(filepath, 'r', encoding='utf-8') as file:
-#                 reader = csv.reader(file)
-#                 for row in reader:
-#                     for item in row:
-#                         item = item.strip()
-#                         if item.startswith('http'):
-#                             urls.append(item)
-
-#         # TXT
-#         elif ext.endswith('.txt'):
-#             with open(filepath, 'r', encoding='utf-8') as file:
-#                 for line in file:
-#                     line = line.strip()
-#                     if line.startswith('http'):
-#                         urls.append(line)
-
-#         # PDF
-#         elif ext.endswith('.pdf'):
-#             with pdfplumber.open(filepath) as pdf:
-#                 for page in pdf.pages:
-#                     text = page.extract_text()
-#                     if text:
-#                         for word in text.split():
-#                             if word.startswith('http'):
-#                                 urls.append(word.strip())
-
-#         # DOCX
-#         elif ext.endswith('.docx'):
-#             doc = Document(filepath)
-#             for para in doc.paragraphs:
-#                 for word in para.text.split():
-#                     if word.startswith('http'):
-#                         urls.append(word.strip())
-
-#     except Exception as e:
-#         logger.error(f"Error reading file {filepath}: {str(e)}")
-
-#     return urls
-
-# def read_urls_from_file(filepath):
-#     """Read URLs from TXT, CSV, PDF, or DOCX files"""
-#     urls = []
-#     try:
-#         if filepath.endswith('.csv'):
-#             with open(filepath, 'r', encoding='utf-8') as file:
-#                 reader = csv.reader(file)
-#                 for row in reader:
-#                     for item in row:
-#                         url = clean_and_validate(item)
-#                         if url:
-#                             urls.append(url)
-
-#         elif filepath.endswith('.txt'):
-#             with open(filepath, 'r', encoding='utf-8') as file:
-#                 for line in file:
-#                     url = clean_and_validate(line)
-#                     if url:
-#                         urls.append(url)
-
-#         elif filepath.endswith('.pdf'):
-#             with pdfplumber.open(filepath) as pdf:
-#                 for page in pdf.pages:
-#                     text = page.extract_text()
-#                     if text:
-#                         for match in re.findall(r'(https?://[^\s]+)', text):
-#                             url = clean_and_validate(match)
-#                             if url:
-#                                 urls.append(url)
-
-#         elif filepath.endswith('.docx'):
-#             doc = Document(filepath)
-#             for para in doc.paragraphs:
-#                 for match in re.findall(r'(https?://[^\s]+)', para.text):
-#                     url = clean_and_validate(match)
-#                     if url:
-#                         urls.append(url)
-
-#     except Exception as e:
-#         logger.error(f"Error reading file {filepath}: {str(e)}")
-
-#     return urls
 
 def read_urls_from_file(filepath):
     """Read URLs from TXT, CSV, PDF, or DOCX files and validate them."""
@@ -587,23 +457,23 @@ def read_urls_from_file(filepath):
                     if url:
                         urls.append(url)
 
-        elif filepath.endswith('.pdf'):
-            with pdfplumber.open(filepath) as pdf:
-                for page in pdf.pages:
-                    text = page.extract_text()
-                    if text:
-                        for match in re.findall(url_pattern, text):
-                            url = clean_and_validate(match)
-                            if url:
-                                urls.append(url)
+        # elif filepath.endswith('.pdf'):
+        #     with pdfplumber.open(filepath) as pdf:
+        #         for page in pdf.pages:
+        #             text = page.extract_text()
+        #             if text:
+        #                 for match in re.findall(url_pattern, text):
+        #                     url = clean_and_validate(match)
+        #                     if url:
+        #                         urls.append(url)
 
-        elif filepath.endswith('.docx'):
-            doc = Document(filepath)
-            for para in doc.paragraphs:
-                for match in re.findall(url_pattern, para.text):
-                    url = clean_and_validate(match)
-                    if url:
-                        urls.append(url)
+        # elif filepath.endswith('.docx'):
+        #     doc = Document(filepath)
+        #     for para in doc.paragraphs:
+        #         for match in re.findall(url_pattern, para.text):
+        #             url = clean_and_validate(match)
+        #             if url:
+        #                 urls.append(url)
 
     except Exception as e:
         logger.error(f"Error reading file {filepath}: {str(e)}")
