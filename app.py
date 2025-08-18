@@ -76,12 +76,32 @@ class AnalysisResult(db.Model):
             },
             'timestamp': self.created_at.isoformat()
         }
+# class Feedback(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     url = db.Column(db.String(500), nullable=True)
+#     is_scam_prediction = db.Column(db.Boolean, nullable=False)
+#     user_feedback = db.Column(db.Boolean, nullable=False)  # True = Correct, False = Wrong
+#     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class Feedback(db.Model):
+    __tablename__ = 'feedback'
     id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.String(500), nullable=True)
-    is_scam_prediction = db.Column(db.Boolean, nullable=False)
-    user_feedback = db.Column(db.Boolean, nullable=False)  # True = Correct, False = Wrong
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Optional link to a saved analysis row
+    analysis_id = db.Column(db.Integer, db.ForeignKey('analysis_result.id'), nullable=True)
+    analysis = db.relationship('AnalysisResult', backref=db.backref('feedback_items', lazy=True))
+
+    # Snapshot fields (so feedback still makes sense even if analysis row is missing)
+    url = db.Column(db.String(1024))
+    text_snippet = db.Column(db.Text)
+
+    predicted_is_scam = db.Column(db.Boolean, nullable=False)     # model’s prediction at the time
+    is_correct = db.Column(db.Boolean, nullable=False)            # user marked correct/incorrect
+    user_note = db.Column(db.Text)                                # optional free-text comment
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
 
 class Statistics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -118,8 +138,13 @@ def analyze_url():
         # Analyze the content
         result = analyze_content(url, crawl_result['content'], crawl_result['metadata'])
         
-        # Save to database
-        save_analysis_result(result)
+         # Save to DB and get analysis_id
+        analysis_id = save_analysis_result(result)
+        result['analysis_id'] = analysis_id
+
+        # # Save to database
+        # save_analysis_result(result)
+        # Update stats
         update_statistics(result['is_scam'])
         
         return jsonify(result)
@@ -143,8 +168,11 @@ def analyze_text():
         result = analyze_content('Text Analysis', text)
         result['text'] = text[:200] + '...' if len(text) > 200 else text
         
-        # Save to database
-        save_analysis_result(result)
+        # # Save to database
+        # save_analysis_result(result)
+        # Save to DB and get analysis_id
+        analysis_id = save_analysis_result(result)
+        result['analysis_id'] = analysis_id
         update_statistics(result['is_scam'])
         
         return jsonify(result)
@@ -192,7 +220,10 @@ def analyze_batch():
                 if crawl_result['success']:
                     result = analyze_content(url, crawl_result['content'], crawl_result['metadata'])
                     results.append(result)
-                    save_analysis_result(result)
+                    # save_analysis_result(result)
+                    # Save to DB and get analysis_id
+                    analysis_id = save_analysis_result(result)
+                    result['analysis_id'] = analysis_id
                     update_statistics(result['is_scam'])
                 else:
                     # Create error result
@@ -249,7 +280,10 @@ def upload_file():
                     if crawl_result['success']:
                         result = analyze_content(url, crawl_result['content'], crawl_result['metadata'])
                         results.append(result)
-                        save_analysis_result(result)
+                        # save_analysis_result(result)
+                        # Save to DB and get analysis_id
+                        analysis_id = save_analysis_result(result)
+                        result['analysis_id'] = analysis_id
                         update_statistics(result['is_scam'])
                 except Exception as e:
                     logger.error(f"Error processing URL {url}: {str(e)}")
@@ -387,6 +421,8 @@ def save_analysis_result(result):
         )
         db.session.add(analysis)
         db.session.commit()
+        return analysis.id
+    
     except Exception as e:
         logger.error(f"Error saving analysis result: {str(e)}")
         db.session.rollback()
@@ -491,6 +527,7 @@ def read_urls_from_file(filepath):
 def create_tables():
     with app.app_context():
         db.create_all()
+    app.run(debug=True)
 
 @app.route('/api/statistics/extended', methods=['GET'])
 def get_extended_statistics():
@@ -516,16 +553,24 @@ def get_extended_statistics():
             domain_count[domain] = domain_count.get(domain, 0) + 1
 
         # Real accuracy
-        correct = 0
-        total = 0
-        for r in all_results:
-            predicted = r.scam_probability > 0.5
-            if predicted == r.is_scam:
-                correct += 1
-            total += 1
-        accuracy = round((correct / total) * 100) if total > 0 else 0
+        # correct = 0
+        # total = 0
+        # for r in all_results:
+        #     predicted = r.scam_probability > 0.5
+        #     if predicted == r.is_scam:
+        #         correct += 1
+        #     total += 1
+        # accuracy = round((correct / total) * 100) if total > 0 else 0
 
-        
+        # --- NEW: Accuracy from feedback if any exists ---
+        fb_total = db.session.query(Feedback).count()
+        if fb_total > 0:
+            fb_correct = db.session.query(Feedback).filter_by(is_correct=True).count()
+            accuracy = round((fb_correct / fb_total) * 100)
+        else:
+            # fallback: predicted vs label (if you store ground-truth), or 0
+            accuracy = 0
+
         return jsonify({
             'total_checked': stats.total_checked,
             'scams_detected': stats.scams_detected,
@@ -539,22 +584,67 @@ def get_extended_statistics():
         logger.error(f"Error getting statistics: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
+# @app.route('/api/feedback', methods=['POST'])
+# def submit_feedback():
+#     try:
+#         data = request.get_json()
+#         feedback = Feedback(
+#             url=data.get('url'),
+#             is_scam_prediction=data.get('is_scam'),
+#             user_feedback=data.get('user_feedback')
+#         )
+#         db.session.add(feedback)
+#         db.session.commit()
+#         return jsonify({'success': True, 'message': 'Feedback recorded'})
+#     except Exception as e:
+#         logger.error(f"Error saving feedback: {str(e)}")
+#         db.session.rollback()
+#         return jsonify({'error': 'Failed to save feedback'}), 500
+
 @app.route('/api/feedback', methods=['POST'])
 def submit_feedback():
     try:
-        data = request.get_json()
-        feedback = Feedback(
-            url=data.get('url'),
-            is_scam_prediction=data.get('is_scam'),
-            user_feedback=data.get('user_feedback')
+        data = request.get_json(force=True) or {}
+
+        # expected fields from frontend:
+        # analysis_id (optional but recommended), url or text_snippet (fallback),
+        # predicted_is_scam (bool), is_correct (bool), user_note (optional)
+
+        analysis_id = data.get('analysis_id')
+        predicted_is_scam = bool(data.get('predicted_is_scam'))
+        is_correct = bool(data.get('is_correct'))
+        url = data.get('url')
+        text_snippet = data.get('text_snippet')
+        user_note = data.get('user_note')
+
+        fb = Feedback(
+            analysis_id=analysis_id,
+            url=url,
+            text_snippet=text_snippet,
+            predicted_is_scam=predicted_is_scam,
+            is_correct=is_correct,
+            user_note=user_note
         )
-        db.session.add(feedback)
+        db.session.add(fb)
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Feedback recorded'})
+
+        return jsonify({'success': True, 'feedback_id': fb.id})
     except Exception as e:
-        logger.error(f"Error saving feedback: {str(e)}")
-        db.session.rollback()
-        return jsonify({'error': 'Failed to save feedback'}), 500
+        logger.error(f"Error saving feedback: {e}")
+        return jsonify({'success': False, 'error': 'Failed to save feedback'}), 500
+
+
+@app.route('/api/feedback', methods=['GET'])
+def list_feedback():
+    items = Feedback.query.order_by(Feedback.created_at.desc()).limit(50).all()
+    return jsonify([{
+        'id': f.id,
+        'analysis_id': f.analysis_id,
+        'url': f.url,
+        'predicted_is_scam': f.predicted_is_scam,
+        'is_correct': f.is_correct,
+        'created_at': f.created_at.isoformat()
+    } for f in items])
 
 
 if __name__ == '__main__':

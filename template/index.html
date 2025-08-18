@@ -376,70 +376,152 @@
             section.scrollIntoView({ behavior: 'smooth' });
         }
 
+        // function createResultElement(result) {
+        //     const div = document.createElement('div');
+        //     div.className = 'result-item';
+            
+        //     const riskClass = result.riskLevel === 'high' ? 'danger' : 
+        //                     result.riskLevel === 'medium' ? 'warning' : 'safe';
+            
+        //     const percentage = Math.round(result.scamProbability * 100);
+        //     const localTime = new Date(result.timestamp).toLocaleString('en-LK', { timeZone: 'Asia/Colombo' });
+
+        //     div.innerHTML = `
+        //         <div class="result-header">
+        //             <div class="result-url">${result.url}</div>
+        //             <div class="probability-badge ${riskClass}">
+        //                 ${percentage}% Risk
+        //             </div>
+        //         </div>
+        //         <div class="progress-bar">
+        //             <div class="progress-fill" style="width: ${percentage}%; background: ${
+        //                 result.riskLevel === 'high' ? '#dc3545' : 
+        //                 result.riskLevel === 'medium' ? '#ffc107' : '#28a745'
+        //             }"></div>
+        //         </div>
+        //         <div class="result-details">
+        //             <strong>Risk Level:</strong> ${result.riskLevel.toUpperCase()}<br>
+        //             <strong>Suspicious Keywords:</strong> ${result.details.suspiciousKeywords.join(', ') || 'None detected'}<br>
+        //             ${result.details.domainAge ? `<strong>Domain Age:</strong> ${result.details.domainAge}<br>` : ''}
+        //             <strong>Grammar Score:</strong> ${result.details.grammarScore}/100<br>
+        //             <strong>Analysis Time:</strong> ${localTime}
+
+        //         </div>
+        //         <div class="feedback-buttons">
+        //             <button onclick="sendFeedback('${result.url}', ${result.isScam}, true)">👍 Correct</button>
+        //             <button onclick="sendFeedback('${result.url}', ${result.isScam}, false)">👎 Wrong</button>
+        //         </div>
+
+        //     `;
+            
+        //     return div;
+        // }
         function createResultElement(result) {
             const div = document.createElement('div');
             div.className = 'result-item';
-            
-            const riskClass = result.riskLevel === 'high' ? 'danger' : 
+
+            const riskClass = result.riskLevel === 'high' ? 'danger' :
                             result.riskLevel === 'medium' ? 'warning' : 'safe';
-            
             const percentage = Math.round(result.scamProbability * 100);
             const localTime = new Date(result.timestamp).toLocaleString('en-LK', { timeZone: 'Asia/Colombo' });
 
             div.innerHTML = `
                 <div class="result-header">
-                    <div class="result-url">${result.url}</div>
+                    <div class="result-url">${result.url || 'Text Analysis'}</div>
                     <div class="probability-badge ${riskClass}">
                         ${percentage}% Risk
                     </div>
                 </div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${percentage}%; background: ${
-                        result.riskLevel === 'high' ? '#dc3545' : 
-                        result.riskLevel === 'medium' ? '#ffc107' : '#28a745'
-                    }"></div>
+                     <div class="progress-fill" style="width: ${percentage}%; background: ${
+                         result.riskLevel === 'high' ? '#dc3545' : 
+                         result.riskLevel === 'medium' ? '#ffc107' : '#28a745'
+                     }"></div>
                 </div>
                 <div class="result-details">
-                    <strong>Risk Level:</strong> ${result.riskLevel.toUpperCase()}<br>
-                    <strong>Suspicious Keywords:</strong> ${result.details.suspiciousKeywords.join(', ') || 'None detected'}<br>
-                    ${result.details.domainAge ? `<strong>Domain Age:</strong> ${result.details.domainAge}<br>` : ''}
-                    <strong>Grammar Score:</strong> ${result.details.grammarScore}/100<br>
-                    <strong>Analysis Time:</strong> ${localTime}
-
-                </div>
-                <div class="feedback-buttons">
-                    <button onclick="sendFeedback('${result.url}', ${result.isScam}, true)">👍 Correct</button>
-                    <button onclick="sendFeedback('${result.url}', ${result.isScam}, false)">👎 Wrong</button>
+                    <strong>Risk Level:</strong> ${result.riskLevel?.toUpperCase() || '-'}<br>
+                    <strong>Suspicious Keywords:</strong> ${(result.details?.suspiciousKeywords || []).join(', ') || 'None detected'}<br>
+                    ${result.details?.domainAge ? `<strong>Domain Age:</strong> ${result.details.domainAge}<br>` : ''}
+                    <strong>Grammar Score:</strong> ${result.details?.grammarScore ?? '-'} / 100<br>
+                    <strong>Analysis Time:</strong> ${new Date(result.timestamp).toLocaleString('en-LK', { timeZone: 'Asia/Colombo' })}
                 </div>
 
+                <div class="feedback-row" style="margin-top:10px; display:flex; gap:8px;">
+                    <button class="btn btn-secondary btn-correct">👍 Correct</button>
+                    <button class="btn btn-secondary btn-wrong">👎 Wrong</button>
+                </div>
             `;
-            
+
+            // Attach event handlers that POST feedback
+            const btnCorrect = div.querySelector('.btn-correct');
+            const btnWrong = div.querySelector('.btn-wrong');
+
+            // Build minimal payload
+            const payloadBase = {
+                analysis_id: result.analysis_id || null,            // returned by backend
+                url: result.url || null,
+                text_snippet: result.text ? String(result.text).slice(0, 200) : null,
+                predicted_is_scam: !!result.isScam,
+                user_note: null
+            };
+
+            btnCorrect.addEventListener('click', async () => {
+                await sendFeedback({ ...payloadBase, is_correct: true });
+                btnCorrect.disabled = btnWrong.disabled = true;
+                showAlert('Thanks! Your feedback was recorded.', 'success');
+            });
+
+            btnWrong.addEventListener('click', async () => {
+                await sendFeedback({ ...payloadBase, is_correct: false });
+                btnCorrect.disabled = btnWrong.disabled = true;
+                showAlert('Thanks! Your feedback was recorded.', 'success');
+            });
+
             return div;
         }
 
-        async function sendFeedback(url, isScam, userFeedback) {
+
+        // async function sendFeedback(url, isScam, userFeedback) {
+        //     try {
+        //         const response = await fetch('/api/feedback', {
+        //             method: 'POST',
+        //             headers: { 'Content-Type': 'application/json' },
+        //             body: JSON.stringify({
+        //                 url: url,
+        //                 is_scam: isScam,
+        //                 user_feedback: userFeedback
+        //             })
+        //         });
+
+        //         const data = await response.json();
+        //         if (data.success) {
+        //             alert('✅ Thank you for your feedback!');
+        //         } else {
+        //             alert('⚠️ Failed to record feedback');
+        //         }
+        //     } catch (err) {
+        //         console.error(err);
+        //         alert('⚠️ Error sending feedback');
+        //     }
+        // }
+        async function sendFeedback(payload) {
             try {
-                const response = await fetch('/api/feedback', {
+                const res = await fetch('/api/feedback', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: url,
-                        is_scam: isScam,
-                        user_feedback: userFeedback
-                    })
+                    body: JSON.stringify(payload)
                 });
-
-                const data = await response.json();
-                if (data.success) {
-                    alert('✅ Thank you for your feedback!');
-                } else {
-                    alert('⚠️ Failed to record feedback');
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to save feedback');
                 }
+                return data;
             } catch (err) {
-                console.error(err);
-                alert('⚠️ Error sending feedback');
+                console.error('Feedback error:', err);
+                showAlert('Could not save feedback. Please try again.', 'error');
             }
         }
+
 
 
         function updateStats(result) {
@@ -572,6 +654,7 @@
         async function loadHistory() {
             const res = await fetch('/api/history');
             const data = await res.json();
+            
 
             const container = document.getElementById('historyResults');
             container.innerHTML = data.results.map(r => `
