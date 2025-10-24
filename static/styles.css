@@ -1074,6 +1074,20 @@ canvas {
     margin-bottom: 0.75rem;
     border-left: 3px solid var(--accent-color);
     font-size: clamp(0.875rem, 1.5vw, 1rem);
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+.history-item strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    word-wrap: break-word;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    line-height: 1.4;
 }
 
 @media (max-width: 768px) {
