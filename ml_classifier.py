@@ -20,14 +20,6 @@ class ScholarshipClassifier:
         self.model_path = model_path
         self.model = None
         self.scaler = None
-       
-        # self.feature_names = [
-        #     'suspicious_keyword_count', 'sentiment_score', 'grammar_score',
-        #     'readability_score', 'legitimacy_score', 'urgency_score',
-        #     'word_count', 'sentence_count', 'avg_sentence_length',
-        #     'domain_age_days', 'ssl_certificate', 'domain_reputation',
-        #     'contact_info_present', 'social_media_links', 'privacy_policy_present'
-        # ]
     
 
         self.feature_names = [

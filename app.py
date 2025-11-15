@@ -76,12 +76,7 @@ class AnalysisResult(db.Model):
             },
             'timestamp': self.created_at.isoformat()
         }
-# class Feedback(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     url = db.Column(db.String(500), nullable=True)
-#     is_scam_prediction = db.Column(db.Boolean, nullable=False)
-#     user_feedback = db.Column(db.Boolean, nullable=False)  # True = Correct, False = Wrong
-#     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 
 class Feedback(db.Model):
@@ -120,8 +115,6 @@ def splash():
 @app.route('/app')
 def index():
     return render_template('index.html')
-
-
 
 
 @app.route('/api/analyze-url', methods=['POST'])
@@ -186,25 +179,7 @@ def analyze_text():
         logger.error(f"Error analyzing text: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-# @app.route('/api/analyze-text', methods=['POST'])
-# def analyze_text():
-#     data = request.get_json()
-#     text = data.get('text', '')
 
-#     if not text.strip():
-#         return jsonify({'error': 'No text provided'}), 400
-
-#     # Extract real features
-#     features = extract_features_from_text(text)
-
-#     # Classify using ML
-#     result = ml_classifier.classify(features)
-
-#     return jsonify({
-#         'is_scam': result['is_scam'],
-#         'scam_probability': round(result['scam_probability'] * 100, 2),
-#         'confidence': round(result['confidence'] * 100, 2)
-#     })
 
 @app.route('/api/analyze-batch', methods=['POST'])
 def analyze_batch():
@@ -589,22 +564,7 @@ def get_extended_statistics():
         logger.error(f"Error getting statistics: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-# @app.route('/api/feedback', methods=['POST'])
-# def submit_feedback():
-#     try:
-#         data = request.get_json()
-#         feedback = Feedback(
-#             url=data.get('url'),
-#             is_scam_prediction=data.get('is_scam'),
-#             user_feedback=data.get('user_feedback')
-#         )
-#         db.session.add(feedback)
-#         db.session.commit()
-#         return jsonify({'success': True, 'message': 'Feedback recorded'})
-#     except Exception as e:
-#         logger.error(f"Error saving feedback: {str(e)}")
-#         db.session.rollback()
-#         return jsonify({'error': 'Failed to save feedback'}), 500
+
 
 @app.route('/api/feedback', methods=['POST'])
 def submit_feedback():
