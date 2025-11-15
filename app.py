@@ -21,6 +21,7 @@ import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Flask app setup
 app = Flask(__name__, template_folder='template')
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///scholarship_detector.db'
@@ -29,10 +30,8 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 
-
-# Initialize extensions
-db = SQLAlchemy(app)
-CORS(app)
+db = SQLAlchemy(app) # Initialize DB
+CORS(app) # Enable CORS for frontend communication
 
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -60,6 +59,7 @@ class AnalysisResult(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def to_dict(self):
+        #Convert DB row into JSON serializable dictionary
         return {
             'id': self.id,
             'url': self.url,
@@ -80,6 +80,12 @@ class AnalysisResult(db.Model):
 
 
 class Feedback(db.Model):
+    
+    #Stores user feedback:
+    #- Whether ML prediction was correct/incorrect.
+    #- Optional comments.
+    #Used for future accuracy improvement.
+    
     __tablename__ = 'feedback'
     id = db.Column(db.Integer, primary_key=True)
 
@@ -99,6 +105,13 @@ class Feedback(db.Model):
 
 
 class Statistics(db.Model):
+    
+    #Stores global counters for:
+    #- Total checks
+    #- Scam detections
+    #- Safe scholarships
+    #Used in the analytics dashboard.
+    
     id = db.Column(db.Integer, primary_key=True)
     total_checked = db.Column(db.Integer, default=0)
     scams_detected = db.Column(db.Integer, default=0)

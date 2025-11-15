@@ -7,7 +7,7 @@ from textstat import flesch_reading_ease, flesch_kincaid_grade
 from collections import Counter
 import logging
 
-# Download required NLTK data
+# Download required NLTK data(natural language tool kit)
 try:
     nltk.download('vader_lexicon', quiet=True)
     nltk.download('punkt', quiet=True)
